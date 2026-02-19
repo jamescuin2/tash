@@ -47,7 +47,7 @@
 
     /* ── HERO ── */
     .art-wrap{ position:relative; width:min(250px,68vw); height:min(250px,68vw); margin:0 auto 4px; }
-    .heart-svg{ position:absolute; top:0; right:0; width:50%; filter:drop-shadow(0 6px 14px rgba(255,45,107,.35)); }
+    .heart-svg{ position:absolute; top:0; right:0; width:50%; filter:drop-shadow(0 6px 14px rgba(255,45,107,.35)); overflow: visible; }
     .penguin{
       position:absolute; bottom:0; left:0;
       font-size:clamp(150px,50vw,190px); line-height:1;
@@ -131,7 +131,7 @@
     .spinAway{ animation:spinAway .4s ease-in forwards; }
 
     /* ══════════════════════════════════════
-       FULL-SCREEN GAME OVERLAY
+       FULL-SCREEN GAME OVERLAY (Bubble Pop)
     ══════════════════════════════════════ */
     #gameOverlay{
       position:fixed; inset:0; z-index:100; display:none; flex-direction:column;
@@ -200,6 +200,141 @@
     .scoreBoard .scoreLabel{ font-size:13px; color:rgba(255,255,255,.7); margin-top:2px; }
 
     .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+
+    /* ══════════════════════════════════════
+       WORDLE OVERLAY
+    ══════════════════════════════════════ */
+    #wordleOverlay{
+      position:fixed; inset:0; z-index:100; display:none; flex-direction:column;
+      align-items:center; justify-content:flex-start;
+      background:
+        radial-gradient(ellipse 80% 60% at 15% 5%, #ffb8d0 0%, transparent 55%),
+        radial-gradient(ellipse 70% 70% at 85% 95%, #ffc2d8 0%, transparent 55%),
+        #ffeaf3;
+      font-family:'DM Sans',sans-serif; overflow:hidden; overflow-y:auto;
+      padding:0 0 24px;
+    }
+    #wordleOverlay.visible{ display:flex; }
+
+    /* Wordle header */
+    #wordleHeader{
+      width:100%; display:flex; align-items:center; justify-content:space-between;
+      padding:max(env(safe-area-inset-top),14px) 20px 14px;
+      background:rgba(255,255,255,.6); backdrop-filter:blur(14px);
+      border-bottom:1.5px solid rgba(255,180,210,.4);
+      position:sticky; top:0; z-index:5;
+    }
+    #wordleHeader h2{
+      font-family:'Playfair Display',serif; font-size:22px; font-weight:700;
+      background:linear-gradient(135deg,#c40050,#ff7aa0);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    }
+    #wordleExitBtn{
+      position:static; transform:none;
+      background:rgba(255,45,107,.12); border:1.5px solid rgba(255,45,107,.25);
+      border-radius:999px; padding:6px 16px; font-size:13px; font-weight:800;
+      color:#c40050; cursor:pointer;
+    }
+
+    #wordleToast{
+      position:fixed; top:80px; left:50%; transform:translateX(-50%);
+      background:#1a0a12; color:#fff; padding:10px 22px; border-radius:999px;
+      font-size:14px; font-weight:800; z-index:200;
+      opacity:0; transition:opacity .2s; pointer-events:none; white-space:nowrap;
+    }
+    #wordleToast.show{ opacity:1; }
+
+    /* Grid */
+    #wordleGrid{
+      display:grid; gap:6px; margin:24px auto 18px;
+      padding:0 16px;
+    }
+
+    .w-row{ display:flex; gap:6px; }
+
+    .w-tile{
+      width:clamp(44px,12vw,58px); height:clamp(44px,12vw,58px);
+      border:2px solid rgba(255,150,190,.4);
+      border-radius:12px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:clamp(20px,5vw,26px); font-weight:800;
+      text-transform:uppercase; color:var(--text);
+      background:rgba(255,255,255,.85);
+      transition:border-color .15s, background .15s, transform .1s;
+      user-select:none;
+    }
+    .w-tile.filled{
+      border-color:rgba(255,45,107,.5);
+      animation:tilePop .1s ease-out;
+    }
+    @keyframes tilePop{ 0%{transform:scale(1)} 50%{transform:scale(1.12)} 100%{transform:scale(1)} }
+
+    @keyframes tileFlip{
+      0%{transform:rotateX(0deg)}
+      50%{transform:rotateX(-90deg); background:#eee; color:transparent;}
+      100%{transform:rotateX(0deg)}
+    }
+    .w-tile.correct{ background:#ff2d6b; color:#fff; border-color:#c40050; }
+    .w-tile.present{ background:#ff9ec0; color:#fff; border-color:#ff6699; }
+    .w-tile.absent { background:#c9a0b0; color:#fff; border-color:#b08898; }
+
+    @keyframes shake{
+      0%,100%{transform:translateX(0)}
+      20%{transform:translateX(-6px)}
+      40%{transform:translateX(6px)}
+      60%{transform:translateX(-4px)}
+      80%{transform:translateX(4px)}
+    }
+    .w-row.shake{ animation:shake .35s ease-in-out; }
+
+    @keyframes bounce{
+      0%,100%{transform:translateY(0)}
+      50%{transform:translateY(-10px)}
+    }
+    .w-tile.bounce{ animation:bounce .4s ease-in-out; }
+
+    /* Keyboard */
+    #wordleKeyboard{
+      display:flex; flex-direction:column; gap:8px;
+      align-items:center; padding:0 8px; width:100%; max-width:520px; margin:0 auto;
+    }
+    .kb-row{ display:flex; gap:5px; }
+    .kb-key{
+      position:static; transform:none;
+      height:clamp(42px,10vw,54px); min-width:clamp(28px,7vw,40px);
+      padding:0 6px;
+      border-radius:9px; font-size:clamp(11px,3vw,14px); font-weight:800;
+      background:rgba(255,255,255,.8); color:var(--text);
+      border:1.5px solid rgba(255,180,210,.35);
+      box-shadow:0 3px 10px rgba(180,40,100,.08);
+      cursor:pointer; transition:background .15s, transform .1s;
+      display:flex; align-items:center; justify-content:center;
+      touch-action:manipulation;
+    }
+    .kb-key:active{ transform:scale(.93); }
+    .kb-key.wide{ min-width:clamp(46px,11vw,60px); font-size:clamp(10px,2.5vw,12px); }
+    .kb-key.correct{ background:#ff2d6b; color:#fff; border-color:#c40050; }
+    .kb-key.present{ background:#ff9ec0; color:#fff; border-color:#ff6699; }
+    .kb-key.absent { background:#c9a0b0; color:#fff; border-color:#b08898; }
+
+    /* Wordle end screen */
+    #wordleEndScreen{
+      display:none; flex-direction:column; align-items:center; justify-content:center;
+      text-align:center; padding:32px 20px 20px;
+    }
+    #wordleEndScreen.show{ display:flex; }
+    #wordleEndScreen .we-emoji{ font-size:64px; margin-bottom:8px; }
+    #wordleEndScreen h3{
+      font-family:'Playfair Display',serif; font-size:clamp(26px,5vw,38px);
+      background:linear-gradient(135deg,#c40050,#ff7aa0);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+      margin-bottom:8px;
+    }
+    #wordleEndScreen p{ font-size:14px; color:var(--muted); max-width:32ch; line-height:1.6; margin-bottom:20px; }
+    .we-word{ font-size:28px; font-weight:800; letter-spacing:.15em; color:#c40050; text-transform:uppercase; margin-bottom:20px; }
+    .we-btn{ position:static; transform:none; padding:14px 30px; font-size:16px; font-weight:800; border-radius:999px; border:none; cursor:pointer; font-family:'DM Sans',sans-serif; margin:5px; }
+    .we-btn.primary{ background:linear-gradient(135deg,#ff2d6b,#c40050); color:#fff; box-shadow:0 8px 24px rgba(255,45,107,.35); }
+    .we-btn.secondary{ background:rgba(255,255,255,.7); color:var(--muted); border:1px solid rgba(255,180,210,.4); }
   </style>
 </head>
 <body>
@@ -239,7 +374,7 @@
 
     <!-- Result -->
     <section class="result" id="result">
-      <h2>You said yes! 🎉</h2>
+      <h2>Swish! 🎉</h2>
       <p class="sweet" id="sweetMsg">You just made my whole entire day 🥹💖 <br> Now on a more serious note, what snacks should I bring later?</p>
       <div class="options" id="options">
         <button class="opt" data-vibe="pringles"    type="button">H&S Pringles 🥵</button>
@@ -249,13 +384,14 @@
       </div>
       <p class="sweet" id="chosen" style="display:none;"></p>
       <div class="footerActions">
-        <button class="linkBtn" id="replayBtn"   type="button">Ask Again 😤</button>
-        <button class="linkBtn" id="playGameBtn" type="button">Click Me 👀</button>
+        <button class="linkBtn" id="replayBtn"    type="button">Ask Again 😤</button>
+        <button class="linkBtn" id="playGameBtn"  type="button">Heart Game 🫧</button>
+        <button class="linkBtn" id="playWordleBtn" type="button">Wordle 💌</button>
       </div>
     </section>
   </main>
 
-  <!-- ── FULL-SCREEN GAME OVERLAY ── -->
+  <!-- ── BUBBLE POP GAME OVERLAY ── -->
   <div id="gameOverlay" role="application" aria-label="Heart bubble pop game">
     <canvas id="bgCanvas"></canvas>
 
@@ -279,7 +415,7 @@
     <div class="gameScreen" id="startScreen">
       <span class="bigEmoji">🫧💕</span>
       <h2>To Distract you from Work!</h2>
-      <p>Tap the floating heart bubbles before they escape.<br><strong>30 seconds · 5 misses max</strong><br>Bubbles will rise faster as time runs out 💨<br>My record is 45 by the way 😤</p>
+      <p>Tap the floating heart bubbles before they escape.<br><strong>30 seconds · 5 misses max</strong><br>Hearts will rise faster as time runs out 💨<br>My record is 45 by the way 😤</p>
       <button class="gsBtn" id="startBtn" type="button">Let's go! 💗</button>
       <button class="gsSecBtn" id="backBtn2" type="button">← Back</button>
     </div>
@@ -296,7 +432,35 @@
     </div>
   </div>
 
+  <!-- ── WORDLE OVERLAY ── -->
+  <div id="wordleOverlay" role="application" aria-label="Valentine Wordle game">
+    <div id="wordleHeader">
+      <h2>💗 Wordle</h2>
+      <button id="wordleExitBtn" type="button">← Back</button>
+    </div>
+
+    <div id="wordleToast"></div>
+
+    <div id="wordleGrid"></div>
+
+    <div id="wordleEndScreen">
+      <div class="we-emoji" id="weEmoji">🎉</div>
+      <h3 id="weTitle">You got it!</h3>
+      <div class="we-word" id="weWord"></div>
+      <div>
+        <button class="we-btn primary" id="wePlayAgainBtn" type="button">Play Again 💗</button>
+        <button class="we-btn secondary" id="weBackBtn" type="button">← Back</button>
+      </div>
+    </div>
+
+    <div id="wordleKeyboard"></div>
+  </div>
+
   <script>
+ 
+  const WORDLE_WORD = "JAMIE";
+  const WORDLE_MAX_GUESSES = 5;
+
   /* ══════════ CONFETTI ══════════ */
   const confettiCanvas=document.getElementById("confettiCanvas");
   function resizeCC(){ const d=Math.max(1,devicePixelRatio||1); confettiCanvas.width=Math.floor(innerWidth*d); confettiCanvas.height=Math.floor(innerHeight*d); }
@@ -325,11 +489,11 @@
         options     = document.getElementById("options"),
         chosen      = document.getElementById("chosen"),
         replayBtn   = document.getElementById("replayBtn"),
-        playGameBtn = document.getElementById("playGameBtn");
+        playGameBtn = document.getElementById("playGameBtn"),
+        playWordleBtn = document.getElementById("playWordleBtn");
 
   let yesScale=1, noClicks=0, runAwayMode=false, noScale=1;
 
-  /* FIX: every entry has h + t; cycle wraps with modulo */
   const noHints=[
     {h:"Wait, WTH 😤..."},
     {h:"I can offer you snacks 🍫🍭🍩  🤫"},
@@ -436,8 +600,9 @@
   });
 
   playGameBtn.addEventListener("click",()=>{ openGame(); });
+  playWordleBtn.addEventListener("click",()=>{ openWordle(); });
 
-  /* ══════════ BACKGROUND CANVAS ══════════ */
+  /* ══════════ BACKGROUND CANVAS (Bubble Pop) ══════════ */
   const bgCanvas=document.getElementById("bgCanvas");
   const bgCtx=bgCanvas.getContext("2d");
   let bgHearts=[], bgRaf=null;
@@ -472,7 +637,7 @@
     bgRaf=requestAnimationFrame(animateBg);
   }
 
-  /* ══════════ GAME STATE ══════════ */
+  /* ══════════ BUBBLE POP GAME STATE ══════════ */
   const overlay       = document.getElementById("gameOverlay"),
         arenaEl       = document.getElementById("arena"),
         hudEl         = document.getElementById("gameHUD"),
@@ -683,6 +848,247 @@
   document.getElementById("backBtn2").addEventListener("click",closeGame);
   document.getElementById("exitBtn").addEventListener("click",()=>{ if(gameRunning&&!confirm("Exit the game?")) return; endGame(false); });
   addEventListener("resize",()=>{ resizeBg(); });
+
+
+  /* ══════════════════════════════════════
+     WORDLE GAME
+  ══════════════════════════════════════ */
+  const wordleOverlay  = document.getElementById("wordleOverlay");
+  const wordleGrid     = document.getElementById("wordleGrid");
+  const wordleKeyboard = document.getElementById("wordleKeyboard");
+  const wordleToast    = document.getElementById("wordleToast");
+  const wordleEndScreen = document.getElementById("wordleEndScreen");
+
+  const WORD_LEN = WORDLE_WORD.length;
+
+  // Wordle state
+  let wGuesses = [];
+  let wCurrentGuess = "";   // letters typed so far
+  let wGameOver = false;
+  let wKeyMap = {};         // letter -> best state ('correct'/'present'/'absent')
+  let wToastTimer = null;
+
+  const KB_ROWS = [
+    ["Q","W","E","R","T","Y","U","I","O","P"],
+    ["A","S","D","F","G","H","J","K","L"],
+    ["ENTER","Z","X","C","V","B","N","M","⌫"],
+  ];
+
+  function openWordle(){
+    mainCard.classList.add("hidden");
+    wordleOverlay.classList.add("visible");
+    initWordle();
+  }
+
+  function closeWordle(){
+    wordleOverlay.classList.remove("visible");
+    mainCard.classList.remove("hidden");
+  }
+
+  function initWordle(){
+    wGuesses=[]; wCurrentGuess=""; wGameOver=false; wKeyMap={};
+    wordleEndScreen.classList.remove("show");
+    buildGrid();
+    buildKeyboard();
+    document.removeEventListener("keydown", handlePhysicalKey);
+    document.addEventListener("keydown", handlePhysicalKey);
+  }
+
+  function buildGrid(){
+    wordleGrid.innerHTML="";
+    wordleGrid.style.gridTemplateRows=`repeat(${WORDLE_MAX_GUESSES},1fr)`;
+    for(let r=0;r<WORDLE_MAX_GUESSES;r++){
+      const row=document.createElement("div");
+      row.className="w-row"; row.id=`wrow-${r}`;
+      for(let c=0;c<WORD_LEN;c++){
+        const tile=document.createElement("div");
+        tile.className="w-tile"; tile.id=`wtile-${r}-${c}`;
+        row.appendChild(tile);
+      }
+      wordleGrid.appendChild(row);
+    }
+  }
+
+  function buildKeyboard(){
+    wordleKeyboard.innerHTML="";
+    KB_ROWS.forEach(row=>{
+      const rowEl=document.createElement("div");
+      rowEl.className="kb-row";
+      row.forEach(key=>{
+        const btn=document.createElement("button");
+        btn.className="kb-key"+(key.length>1?" wide":"");
+        btn.textContent=key; btn.dataset.key=key;
+        btn.type="button";
+        btn.addEventListener("pointerdown",e=>{ e.preventDefault(); handleKey(key); });
+        rowEl.appendChild(btn);
+      });
+      wordleKeyboard.appendChild(rowEl);
+    });
+  }
+
+  function handlePhysicalKey(e){
+    if(!wordleOverlay.classList.contains("visible")) return;
+    if(e.ctrlKey||e.altKey||e.metaKey) return;
+    if(e.key==="Enter") handleKey("ENTER");
+    else if(e.key==="Backspace") handleKey("⌫");
+    else if(/^[a-zA-Z]$/.test(e.key)) handleKey(e.key.toUpperCase());
+  }
+
+  function handleKey(key){
+    if(wGameOver) return;
+    if(key==="⌫"){
+      if(wCurrentGuess.length>0){
+        wCurrentGuess=wCurrentGuess.slice(0,-1);
+        renderCurrentGuess();
+      }
+    } else if(key==="ENTER"){
+      submitGuess();
+    } else if(wCurrentGuess.length<WORD_LEN && /^[A-Z]$/.test(key)){
+      wCurrentGuess+=key;
+      renderCurrentGuess();
+    }
+  }
+
+  function renderCurrentGuess(){
+    const rowIdx=wGuesses.length;
+    for(let c=0;c<WORD_LEN;c++){
+      const tile=document.getElementById(`wtile-${rowIdx}-${c}`);
+      const letter=wCurrentGuess[c]||"";
+      const wasFilled=tile.classList.contains("filled");
+      tile.textContent=letter;
+      if(letter && !wasFilled){
+        tile.classList.add("filled");
+      } else if(!letter){
+        tile.classList.remove("filled");
+      }
+    }
+  }
+
+  function submitGuess(){
+    if(wCurrentGuess.length<WORD_LEN){
+      showToast(`Word must be ${WORD_LEN} letters 💌`);
+      shakeRow(wGuesses.length);
+      return;
+    }
+    const guess=wCurrentGuess.toUpperCase();
+    const rowIdx=wGuesses.length;
+    const result=scoreGuess(guess);
+    wGuesses.push(guess);
+    wCurrentGuess="";
+    revealRow(rowIdx, guess, result, ()=>{
+      updateKeyboard(guess, result);
+      const won=result.every(r=>r==="correct");
+      if(won){
+        wGameOver=true;
+        setTimeout(()=>{ boom(); showEndScreen(true, rowIdx+1); },300);
+      } else if(wGuesses.length>=WORDLE_MAX_GUESSES){
+        wGameOver=true;
+        setTimeout(()=>showEndScreen(false,null),400);
+      }
+    });
+  }
+
+  function scoreGuess(guess){
+    const result=Array(WORD_LEN).fill("absent");
+    const answerLetters=WORDLE_WORD.split("");
+    const guessLetters=guess.split("");
+    const used=Array(WORD_LEN).fill(false);
+
+    for(let i=0;i<WORD_LEN;i++){
+      if(guessLetters[i]===answerLetters[i]){
+        result[i]="correct"; used[i]=true; guessLetters[i]=null;
+      }
+    }
+    for(let i=0;i<WORD_LEN;i++){
+      if(guessLetters[i]===null) continue;
+      for(let j=0;j<WORD_LEN;j++){
+        if(!used[j] && guessLetters[i]===answerLetters[j]){
+          result[i]="present"; used[j]=true; break;
+        }
+      }
+    }
+    return result;
+  }
+
+  function revealRow(rowIdx, guess, result, onDone){
+    const delay=300;
+    for(let c=0;c<WORD_LEN;c++){
+      const tile=document.getElementById(`wtile-${rowIdx}-${c}`);
+      setTimeout(()=>{
+        tile.style.transition="transform 0.2s ease";
+        tile.style.transform="rotateX(90deg)";
+        setTimeout(()=>{
+          tile.textContent=guess[c];
+          tile.className=`w-tile ${result[c]}`;
+          tile.style.transform="rotateX(0deg)";
+          if(c===WORD_LEN-1) setTimeout(onDone, 250);
+        },100);
+      }, c*delay);
+    }
+  }
+
+  function updateKeyboard(guess, result){
+    const priority={correct:3,present:2,absent:1};
+    for(let i=0;i<WORD_LEN;i++){
+      const letter=guess[i];
+      const cur=wKeyMap[letter]||"none";
+      const nxt=result[i];
+      if((priority[nxt]||0)>(priority[cur]||0)){
+        wKeyMap[letter]=nxt;
+      }
+    }
+    wordleKeyboard.querySelectorAll(".kb-key").forEach(btn=>{
+      const k=btn.dataset.key;
+      if(k && wKeyMap[k]){
+        btn.className=`kb-key${k.length>1?" wide":""} ${wKeyMap[k]}`;
+      }
+    });
+  }
+
+  function shakeRow(rowIdx){
+    const row=document.getElementById(`wrow-${rowIdx}`);
+    row.classList.remove("shake");
+    void row.offsetWidth;
+    row.classList.add("shake");
+    row.addEventListener("animationend",()=>row.classList.remove("shake"),{once:true});
+  }
+
+  function showToast(msg){
+    clearTimeout(wToastTimer);
+    wordleToast.textContent=msg;
+    wordleToast.classList.add("show");
+    wToastTimer=setTimeout(()=>wordleToast.classList.remove("show"),1800);
+  }
+
+  function showEndScreen(won, guessCount){
+    wordleEndScreen.classList.add("show");
+    const emoji=document.getElementById("weEmoji");
+    const title=document.getElementById("weTitle");
+    const wordEl=document.getElementById("weWord");
+
+    if(won){
+      const praise=["Yay!"];
+      emoji.textContent="😘😘😘😘😘";
+      title.textContent=praise[Math.min(guessCount-1,5)];
+      msg.textContent=`You got it in ${guessCount} guess${guessCount===1?"":"es"}! 💖`;
+    } else {
+      emoji.textContent="🐧";
+      title.textContent="Silly Penguin!";
+    }
+  }
+
+  document.getElementById("wordleExitBtn").addEventListener("click",()=>{
+    document.removeEventListener("keydown",handlePhysicalKey);
+    closeWordle();
+  });
+  document.getElementById("wePlayAgainBtn").addEventListener("click",()=>{
+    wordleEndScreen.classList.remove("show");
+    initWordle();
+  });
+  document.getElementById("weBackBtn").addEventListener("click",()=>{
+    document.removeEventListener("keydown",handlePhysicalKey);
+    closeWordle();
+  });
   </script>
 </body>
 </html>
